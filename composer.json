@@ -1,6 +1,7 @@
 {
     "name": "hua5p/hyperf-logstash",
     "description": "Hyperf Logstash integration package for centralized logging",
+    "version": "1.0.0",
     "type": "library",
     "license": "MIT",
     "keywords": [
