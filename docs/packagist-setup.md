@@ -27,28 +27,23 @@
 1. 在 Packagist 账户设置中生成 API Token
 2. 配置 GitHub Actions 自动发布
 
-### 3. 配置自动发布
+### 3. 手动发布到 Packagist
 
-#### 在 GitHub 仓库中设置 Secrets
+#### 方法一：通过 Web 界面
 
-1. 进入 GitHub 仓库设置
-2. 点击 "Secrets and variables" → "Actions"
-3. 添加以下 Secret：
-   - `PACKAGIST_TOKEN`: 您的 Packagist API Token
-   - `PACKAGIST_USERNAME`: 您的 Packagist 用户名
+1. 登录 Packagist
+2. 找到您的包：`hua5p/hyperf-logstash`
+3. 点击 "Update" 按钮手动更新
 
-#### 更新 GitHub Actions 工作流
+#### 方法二：通过 API
 
-在 `.github/workflows/ci.yml` 中的 `publish-to-packagist` 任务中添加：
+如果您有 Packagist API Token，可以使用以下命令：
 
-```yaml
-- name: Publish to Packagist
-  run: |
-    curl -X POST \
-      -H "Content-Type: application/json" \
-      -H "Authorization: Bearer ${{ secrets.PACKAGIST_TOKEN }}" \
-      -d '{"repository":{"url":"https://github.com/hua5p/hyperf-logstash"}}' \
-      https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"repository":{"url":"https://github.com/hua5p/hyperf-logstash"}}' \
+  "https://packagist.org/api/update-package?username=YOUR_USERNAME&apiToken=YOUR_TOKEN"
 ```
 
 ### 4. 版本发布流程
@@ -63,14 +58,13 @@
 # 3. 验证 Packagist 是否更新
 ```
 
-#### 自动发布
+#### 手动发布
 
 1. 推送标签到 GitHub：`git push origin v1.0.0`
-2. GitHub Actions 会自动：
-   - 运行测试
-   - 构建包
-   - 创建 Release
-   - 发布到 Packagist
+2. 手动触发 Packagist 更新：
+   - 访问 Packagist 包页面
+   - 点击 "Update" 按钮
+   - 或使用 API 命令更新
 
 ### 5. 验证发布
 
@@ -129,7 +123,7 @@ composer install
 #### 联系支持
 
 - Packagist 问题：https://github.com/composer/packagist
-- GitHub Actions 问题：https://github.com/actions
+- Packagist 问题：https://github.com/composer/packagist
 
 ## 最佳实践
 

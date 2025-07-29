@@ -6,4 +6,5 @@ composer.lock
 .vscode/
 *.log
 .DS_Store
-Thumbs.db 
+Thumbs.db
+/dist/ 
