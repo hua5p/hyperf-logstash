@@ -51,12 +51,12 @@ class LogstashQueueConsumer extends AbstractProcess
         $logger = $this->loggerFactory->get('logstash-queue-consumer');
         $redis = $this->redisFactory->get('default');
 
-        $logger->info('Logstash 队列消费进程启动', [
-            'queue_key' => $this->queueKey,
-            'host' => $this->host,
-            'port' => $this->port,
-            'process_id' => getmypid(),
-        ]);
+        // $logger->info('Logstash 队列消费进程启动', [
+        //     'queue_key' => $this->queueKey,
+        //     'host' => $this->host,
+        //     'port' => $this->port,
+        //     'process_id' => getmypid(),
+        // ]);
 
         while (true) {
             try {
@@ -136,12 +136,12 @@ class LogstashQueueConsumer extends AbstractProcess
             }
 
             $processingTime = (microtime(true) - $startTime) * 1000;
-            $logger->info('Logstash 消息发送成功', [
-                'host' => $jobData['host'],
-                'port' => $jobData['port'],
-                'bytes_written' => $bytesWritten,
-                'processing_time_ms' => round($processingTime, 2)
-            ]);
+            // $logger->info('Logstash 消息发送成功', [
+            //     'host' => $jobData['host'],
+            //     'port' => $jobData['port'],
+            //     'bytes_written' => $bytesWritten,
+            //     'processing_time_ms' => round($processingTime, 2)
+            // ]);
         } catch (\Throwable $e) {
             $logger->error('发送到 Logstash 失败', [
                 'host' => $jobData['host'],
