@@ -15,12 +15,24 @@ Hyperf Logstash 集成包，为 Hyperf 框架提供集中式日志管理功能�
 - ✅ **失败重试**：自动处理发送失败的消息
 - ✅ **配置灵活**：支持环境变量和配置文件配置
 - ✅ **零侵入**：无需修改现有代码
+- ✅ **防循环**：消费进程使用独立日志器，避免无限循环
+- ✅ **UUID 追踪**：使用 ramsey/uuid 生成请求 ID，支持协程上下文传递
 
 ## 安装
 
 ```bash
 composer require hua5p/hyperf-logstash
 ```
+
+### 自动配置（推荐）
+
+安装后，包会自动注册配置。如果需要手动发布配置文件，可以运行：
+
+```bash
+php bin/hyperf.php vendor:publish hua5p/hyperf-logstash
+```
+
+📖 **详细安装指南**：请参考 [安装文档](docs/installation.md)
 
 ## 配置
 
@@ -41,7 +53,28 @@ LOGSTASH_PROJECT=your-project
 LOGSTASH_TEAM=your-team
 ```
 
-### 2. 配置文件（可选）
+### 2. 自动配置（默认）
+
+安装后，包会自动注册以下配置：
+
+- ✅ **进程注册**：自动注册 `LogstashQueueConsumer` 进程
+- ✅ **切面注册**：自动注册 `LogChannelAspect` 切面
+- ✅ **依赖注入**：自动注册 `LogFactoryService` 服务
+- ✅ **注解扫描**：自动扫描包内的注解
+
+**无需手动配置！** 安装后即可直接使用。
+
+### 3. 手动配置（可选）
+
+如果需要自定义配置，可以手动发布配置文件：
+
+```bash
+php bin/hyperf.php vendor:publish hua5p/hyperf-logstash
+```
+
+然后根据需要修改生成的配置文件。
+
+### 4. 配置文件（可选）
 
 如果需要自定义配置，可以在 `config/autoload/logger.php` 中覆盖默认配置：
 
@@ -264,13 +297,19 @@ tail -f runtime/logs/hyperf.log | grep logstash
 
 - 确认 `LogstashQueueConsumer` 进程正在运行
 - 检查 Redis 连接
-- 查看进程日志
+- 查看进程日志：`tail -f runtime/logs/logstash-consumer.log`
 
 ### 3. 连接超时
 
 - 检查 Logstash 服务状态
 - 验证 IP 地址和端口配置
 - 检查网络连通性
+
+### 4. 日志循环问题
+
+- 消费进程使用独立的文件日志器，避免无限循环
+- 进程日志写入 `runtime/logs/logstash-consumer.log`
+- 不会发送到 Logstash 队列
 
 ## 开发
 

@@ -1,7 +1,7 @@
 {
     "name": "hua5p/hyperf-logstash",
     "description": "Hyperf Logstash integration package for centralized logging",
-    "version": "0.0.5",
+    "version": "0.0.7",
     "type": "library",
     "license": "MIT",
     "keywords": [
@@ -24,7 +24,8 @@
         "hyperf/redis": "^3.0",
         "hyperf/process": "^3.0",
         "hyperf/di": "^3.0",
-        "monolog/monolog": "^3.0"
+        "monolog/monolog": "^3.0",
+        "ramsey/uuid": "^4.0"
     },
     "require-dev": {
         "hyperf/testing": "^3.0",

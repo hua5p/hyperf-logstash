@@ -1,53 +1,45 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hua5p\HyperfLogstash\Logger;
 
+use Hyperf\Context\Context;
+use Hyperf\Coroutine\Coroutine;
 use Monolog\LogRecord;
 use Monolog\Processor\ProcessorInterface;
+use Ramsey\Uuid\Uuid;
 
-class UuidRequestIdProcessor implements ProcessorInterface
+final class UuidRequestIdProcessor implements ProcessorInterface
 {
+    public const REQUEST_ID = 'log.request.id';
+
     public function __invoke(LogRecord $record): LogRecord
     {
-        $record->extra['request_id'] = $this->getRequestId();
+        $record->extra['request_id'] = self::getUuid();
         return $record;
     }
 
-    private function getRequestId(): string
+    public static function getUuid(): string
     {
-        // 尝试从 Hyperf 上下文获取 request_id
-        try {
-            if (class_exists('\Hyperf\Context\Context')) {
-                $requestId = \Hyperf\Context\Context::get('request_id');
-                if (is_string($requestId)) {
-                    return $requestId;
-                }
+        $requestId = Context::get(self::REQUEST_ID);
+        if ($requestId) {
+            return $requestId;
+        }
+
+        if (Coroutine::inCoroutine()) {
+            $requestId = Context::get(self::REQUEST_ID, null, Coroutine::parentId());
+            if ($requestId !== null) {
+                self::setUuid($requestId);
+                return $requestId;
             }
-        } catch (\Throwable $e) {
-            // 忽略错误，使用默认值
         }
 
-        // 尝试从 $_SERVER 获取
-        if (isset($_SERVER['HTTP_X_REQUEST_ID'])) {
-            return $_SERVER['HTTP_X_REQUEST_ID'];
-        }
-
-        // 生成新的 request_id
-        return $this->generateRequestId();
+        return self::setUuid(Uuid::uuid4()->toString());
     }
 
-    private function generateRequestId(): string
+    public static function setUuid(string $requestId): string
     {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff)
-        );
+        return Context::set(self::REQUEST_ID, $requestId);
     }
 }

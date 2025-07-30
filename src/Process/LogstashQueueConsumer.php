@@ -6,13 +6,33 @@ namespace Hua5p\HyperfLogstash\Process;
 
 use Hyperf\Config\Annotation\Value;
 use Hyperf\Process\AbstractProcess;
-use Hyperf\Process\Annotation\Process;
 use Hyperf\Redis\RedisFactory;
 use Hyperf\Logger\LoggerFactory;
 use Psr\Container\ContainerInterface;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Formatter\LineFormatter;
 use function Hyperf\Support\env;
 
-#[Process(name: "logstash-queue-consumer", nums: 2)]
+/**
+ * Logstash 队列消费进程
+ * 
+ * 注意：此进程需要在主应用的 config/autoload/processes.php 中注册：
+ * 
+ * return [
+ *     Hua5p\HyperfLogstash\Process\LogstashQueueConsumer::class,
+ * ];
+ * 
+ * 或者使用配置方式：
+ * 
+ * return [
+ *     [
+ *         'name' => 'logstash-queue-consumer',
+ *         'class' => Hua5p\HyperfLogstash\Process\LogstashQueueConsumer::class,
+ *         'nums' => 2,
+ *     ],
+ * ];
+ */
 class LogstashQueueConsumer extends AbstractProcess
 {
     private string $queueKey = 'queue:logstash';
@@ -20,6 +40,7 @@ class LogstashQueueConsumer extends AbstractProcess
     private string $delayedQueueKey = 'queue:logstash:delayed';
     private int $timeout = 5;
     private int $maxRetry = 3;
+    private Logger $processLogger;
 
     #[Value('logstash.host')]
     private ?string $host = null;
@@ -44,19 +65,45 @@ class LogstashQueueConsumer extends AbstractProcess
         if ($this->port === null) {
             $this->port = (int) env('LOGSTASH_PORT', 5000);
         }
+
+        // 创建专门用于进程内部日志的 logger，避免队列循环
+        $this->processLogger = $this->createProcessLogger();
+    }
+
+    /**
+     * 创建进程内部专用的 logger，只写入文件，不发送到队列
+     */
+    private function createProcessLogger(): Logger
+    {
+        $logger = new Logger('logstash-queue-consumer');
+
+        // 只使用文件处理器，避免队列循环
+        $handler = new StreamHandler(
+            'runtime/logs/logstash-consumer.log',
+            \Monolog\Level::Info
+        );
+
+        $formatter = new LineFormatter(
+            "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n",
+            'Y-m-d H:i:s'
+        );
+
+        $handler->setFormatter($formatter);
+        $logger->pushHandler($handler);
+
+        return $logger;
     }
 
     public function handle(): void
     {
-        $logger = $this->loggerFactory->get('logstash-queue-consumer');
         $redis = $this->redisFactory->get('default');
 
-        // $logger->info('Logstash 队列消费进程启动', [
-        //     'queue_key' => $this->queueKey,
-        //     'host' => $this->host,
-        //     'port' => $this->port,
-        //     'process_id' => getmypid(),
-        // ]);
+        $this->processLogger->info('Logstash 队列消费进程启动', [
+            'queue_key' => $this->queueKey,
+            'host' => $this->host,
+            'port' => $this->port,
+            'process_id' => getmypid(),
+        ]);
 
         while (true) {
             try {
@@ -71,13 +118,13 @@ class LogstashQueueConsumer extends AbstractProcess
                 $jobData = $this->parseMessage($message);
 
                 if ($jobData === null) {
-                    $logger->warning('消息格式无效，跳过处理', ['message' => $message]);
+                    $this->processLogger->warning('消息格式无效，跳过处理', ['message' => $message]);
                     continue;
                 }
 
-                $this->sendToLogstash($jobData, $logger);
+                $this->sendToLogstash($jobData);
             } catch (\Throwable $e) {
-                $logger->error('处理 Logstash 消息异常', [
+                $this->processLogger->error('处理 Logstash 消息异常', [
                     'exception' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
                 ]);
@@ -85,7 +132,7 @@ class LogstashQueueConsumer extends AbstractProcess
             }
         }
 
-        $logger->info('Logstash 队列消费进程停止');
+        $this->processLogger->info('Logstash 队列消费进程停止');
     }
 
     private function parseMessage(string $message): ?array
@@ -106,7 +153,7 @@ class LogstashQueueConsumer extends AbstractProcess
         }
     }
 
-    private function sendToLogstash(array $jobData, $logger): void
+    private function sendToLogstash(array $jobData): void
     {
         try {
             $startTime = microtime(true);
@@ -136,14 +183,14 @@ class LogstashQueueConsumer extends AbstractProcess
             }
 
             $processingTime = (microtime(true) - $startTime) * 1000;
-            // $logger->info('Logstash 消息发送成功', [
-            //     'host' => $jobData['host'],
-            //     'port' => $jobData['port'],
-            //     'bytes_written' => $bytesWritten,
-            //     'processing_time_ms' => round($processingTime, 2)
-            // ]);
+            $this->processLogger->info('Logstash 消息发送成功', [
+                'host' => $jobData['host'],
+                'port' => $jobData['port'],
+                'bytes_written' => $bytesWritten,
+                'processing_time_ms' => round($processingTime, 2)
+            ]);
         } catch (\Throwable $e) {
-            $logger->error('发送到 Logstash 失败', [
+            $this->processLogger->error('发送到 Logstash 失败', [
                 'host' => $jobData['host'],
                 'port' => $jobData['port'],
                 'exception' => $e->getMessage()
@@ -154,7 +201,6 @@ class LogstashQueueConsumer extends AbstractProcess
 
     private function handleFailedMessage(array $jobData, \Throwable $exception): void
     {
-        $logger = $this->loggerFactory->get('logstash-queue-consumer');
         $redis = $this->redisFactory->get('default');
 
         try {
@@ -167,12 +213,12 @@ class LogstashQueueConsumer extends AbstractProcess
 
             $redis->lpush($this->failedQueueKey, json_encode($failedMessage));
 
-            $logger->warning('Logstash 消息发送失败，已移至失败队列', [
+            $this->processLogger->warning('Logstash 消息发送失败，已移至失败队列', [
                 'host' => $jobData['host'],
                 'port' => $jobData['port']
             ]);
         } catch (\Throwable $e) {
-            $logger->error('处理失败消息时出错', [
+            $this->processLogger->error('处理失败消息时出错', [
                 'host' => $jobData['host'],
                 'original_exception' => $exception->getMessage(),
                 'dead_letter_exception' => $e->getMessage()
@@ -182,6 +228,22 @@ class LogstashQueueConsumer extends AbstractProcess
 
     public function isEnable($server): bool
     {
-        return env('LOGSTASH_ENABLED', false);
+        // 如果没有设置 LOGSTASH_ENABLED，默认启用（向后兼容）
+        $enabled = env('LOGSTASH_ENABLED', true);
+
+        // 如果明确设置为 false，则禁用
+        if ($enabled === false || $enabled === 'false' || $enabled === '0') {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * 获取进程日志器（仅用于测试）
+     */
+    public function getProcessLogger(): Logger
+    {
+        return $this->processLogger;
     }
 }
