@@ -10,6 +10,7 @@ use Hyperf\Process\Annotation\Process;
 use Hyperf\Redis\RedisFactory;
 use Hyperf\Logger\LoggerFactory;
 use Psr\Container\ContainerInterface;
+use function Hyperf\Support\env;
 
 #[Process(name: "logstash-queue-consumer", nums: 2)]
 class LogstashQueueConsumer extends AbstractProcess
@@ -41,7 +42,7 @@ class LogstashQueueConsumer extends AbstractProcess
             $this->host = env('LOGSTASH_HOST', '192.168.31.210');
         }
         if ($this->port === null) {
-            $this->port = env('LOGSTASH_PORT', 5000);
+            $this->port = (int) env('LOGSTASH_PORT', 5000);
         }
     }
 

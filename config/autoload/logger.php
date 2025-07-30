@@ -6,6 +6,7 @@ use Hua5p\HyperfLogstash\Logger\LogstashQueueHandler;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Level;
+use function Hyperf\Support\env;
 
 return [
     'default' => [
