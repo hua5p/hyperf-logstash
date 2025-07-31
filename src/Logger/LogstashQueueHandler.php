@@ -21,7 +21,6 @@ class LogstashQueueHandler extends AbstractProcessingHandler
         string $project = 'hua5p',
         string $module = 'default',
         string $team = 'hua5p',
-        string $machineName = '',
         int|\Monolog\Level $level = \Monolog\Logger::DEBUG,
         bool $bubble = true
     ) {
@@ -35,7 +34,7 @@ class LogstashQueueHandler extends AbstractProcessingHandler
         $this->project = $project;
         $this->module = $module;
         $this->team = $team;
-        $this->machineName = $this->getMachineName($machineName);
+        $this->machineName = $this->getMachineName();
 
         $this->setFormatter(new JsonFormatter());
     }
