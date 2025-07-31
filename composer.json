@@ -43,7 +43,7 @@
     },
     "extra": {
         "hyperf": {
-            "config": "config/autoload"
+            "config": "Hua5p\\HyperfLogstash\\ConfigProvider"
         }
     },
     "scripts": {

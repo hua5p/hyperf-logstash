@@ -33,8 +33,8 @@ class ConfigProvider
             // 发布配置文件
             'publish' => [
                 [
-                    'id' => 'config',
-                    'description' => 'The config for hyperf-logstash.',
+                    'id' => 'logger',
+                    'description' => 'The logger config for hyperf-logstash.',
                     'source' => __DIR__ . '/../config/autoload/logger.php',
                     'destination' => 'config/autoload/logger.php',
                 ],
