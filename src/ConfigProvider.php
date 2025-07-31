@@ -13,7 +13,7 @@ class ConfigProvider
 {
     public function __invoke(): array
     {
-        $config = require __DIR__ . '/../config/autoload/logstash.php';
+        $config = require __DIR__ . '/../config/autoload/hua5plog.php';
 
         return [
             // 自动注册配置
