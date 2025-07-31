@@ -24,10 +24,10 @@ class ConfigProvider
             // 发布配置文件
             'publish' => [
                 [
-                    'id' => 'logstash',
+                    'id' => 'hua5plog',
                     'description' => 'The logstash config for hyperf-logstash.',
-                    'source' => __DIR__ . '/../config/autoload/logstash.php',
-                    'destination' => 'config/autoload/logstash.php',
+                    'source' => __DIR__ . '/../config/autoload/hua5plog.php',
+                    'destination' => 'config/autoload/hua5plog.php',
                 ],
             ],
         ];

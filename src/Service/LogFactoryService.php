@@ -138,7 +138,7 @@ class LogFactoryService
     private static function getConfig(): array
     {
         try {
-            $config = config('logger.modules', [
+            $config = config('hua5plog', [
                 'max_files' => 30,
                 'date_format' => 'Y-m-d H:i:s',
             ]);

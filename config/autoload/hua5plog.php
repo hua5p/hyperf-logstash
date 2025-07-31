@@ -20,6 +20,8 @@ return [
         'project' => env('LOGSTASH_PROJECT', 'hua5Rec'),
         'team' => env('LOGSTASH_TEAM', 'hua5p'),
         'enabled' => env('LOGSTASH_ENABLED', true),
+        'max_files' => 7,
+        'date_format' => 'Y-m-d H:i:s',
     ],
 
     // 日志配置
