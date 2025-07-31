@@ -50,7 +50,7 @@ class LogstashQueueHandler extends AbstractProcessingHandler
             $data = json_decode($json, true);
 
             // 将 index 字段提升到根级别
-            $data['index'] = "{$this->team}-{$this->project}-{$this->module}";
+            $data['index'] = "{$this->team}-{$this->project}-{$this->module}-" . date('Y-m-d');
             //消息体中增加机器名称
             $data['machine_name'] = $this->machineName;
 
