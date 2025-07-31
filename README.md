@@ -1,22 +1,17 @@
-# Hyperf Logstash Integration Package
+# Hyperf Logstash
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/hua5p/hyperf-logstash.svg)](https://packagist.org/packages/hua5p/hyperf-logstash)
-[![Total Downloads](https://img.shields.io/packagist/dt/hua5p/hyperf-logstash.svg)](https://packagist.org/packages/hua5p/hyperf-logstash)
-[![License](https://img.shields.io/packagist/l/hua5p/hyperf-logstash.svg)](https://packagist.org/packages/hua5p/hyperf-logstash)
-
-Hyperf Logstash 集成包，为 Hyperf 框架提供集中式日志管理功能，支持异步队列处理和 ELK 栈集成。
+Hyperf Logstash 集成包，提供开箱即用的日志解决方案，支持模块化日志记录和 Logstash 集成。
 
 ## 特性
 
-- ✅ **自动集成**：安装后自动为所有日志添加 Logstash 处理器
-- ✅ **异步处理**：通过 Redis 队列异步发送日志，不影响主业务流程
-- ✅ **多通道支持**：支持不同日志通道生成不同索引
-- ✅ **注解日志**：支持 `#[LogChannel]` 注解自动注入日志实例
-- ✅ **失败重试**：自动处理发送失败的消息
-- ✅ **配置灵活**：支持环境变量和配置文件配置
-- ✅ **零侵入**：无需修改现有代码
-- ✅ **防循环**：消费进程使用独立日志器，避免无限循环
-- ✅ **UUID 追踪**：使用 ramsey/uuid 生成请求 ID，支持协程上下文传递
+- 🚀 **开箱即用**：无需复杂配置，安装即可使用
+- 📊 **模块化日志**：支持按模块分离日志文件
+- 🔗 **Logstash 集成**：自动发送日志到 Logstash
+- 🎯 **多种使用方式**：静态门面、Trait、注解等多种选择
+- ⚡ **性能监控**：内置性能日志记录
+- 🛡️ **异常处理**：自动记录异常信息
+- 🔧 **灵活配置**：支持环境变量配置
+- 🚀 **单例模式**：日志实例缓存，避免重复创建
 
 ## 安装
 
@@ -24,320 +19,234 @@ Hyperf Logstash 集成包，为 Hyperf 框架提供集中式日志管理功能�
 composer require hua5p/hyperf-logstash
 ```
 
-### 自动配置（推荐）
+## 快速配置
 
-安装后，包会自动注册配置。如果需要手动发布配置文件，可以运行：
+### 1. 发布配置文件
 
 ```bash
 php bin/hyperf.php vendor:publish hua5p/hyperf-logstash
 ```
 
-📖 **详细安装指南**：请参考 [安装文档](docs/installation.md)
+### 2. 配置环境变量（可选）
 
-## 配置
-
-### 1. 环境变量
-
-在 `.env` 文件中添加以下配置：
+在 `.env` 文件中配置：
 
 ```env
-# 启用 Logstash 集成
-LOGSTASH_ENABLED=true
-
-# Logstash 服务地址
+# Logstash 配置
 LOGSTASH_HOST=192.168.31.210
 LOGSTASH_PORT=5000
-
-# 项目配置
-LOGSTASH_PROJECT=your-project
-LOGSTASH_TEAM=your-team
+LOGSTASH_PROJECT=hua5Rec
+LOGSTASH_TEAM=hua5p
+LOGSTASH_ENABLED=true
 ```
 
-### 2. 自动配置（默认）
+### 3. 开始使用
 
-安装后，包会自动注册以下配置：
+现在你可以直接使用日志功能，无需额外配置！
 
-- ✅ **进程注册**：自动注册 `LogstashQueueConsumer` 进程
-- ✅ **切面注册**：自动注册 `LogChannelAspect` 切面
-- ✅ **依赖注入**：自动注册 `LogFactoryService` 服务
-- ✅ **注解扫描**：自动扫描包内的注解
+## 快速开始
 
-**无需手动配置！** 安装后即可直接使用。
-
-### 3. 手动配置（可选）
-
-如果需要自定义配置，可以手动发布配置文件：
-
-```bash
-php bin/hyperf.php vendor:publish hua5p/hyperf-logstash
-```
-
-然后根据需要修改生成的配置文件。
-
-### 4. 配置文件（可选）
-
-如果需要自定义配置，可以在 `config/autoload/logger.php` 中覆盖默认配置：
+### 方式 1: 静态门面类（推荐）
 
 ```php
-<?php
+use Hua5p\HyperfLogstash\Logger\Log;
 
-declare(strict_types=1);
+// 记录信息日志
+Log::info('user', '用户登录成功', ['user_id' => 123]);
 
-use Hua5p\HyperfLogstash\Logger\LogstashQueueHandler;
-use Monolog\Level;
+// 记录业务日志
+Log::business('order', 'create_order', ['amount' => 100]);
 
-return [
-    'default' => [
-        'handlers' => [
-            // 文件处理器
-            [
-                'class' => \Monolog\Handler\RotatingFileHandler::class,
-                'constructor' => [
-                    'filename' => BASE_PATH . '/runtime/logs/hyperf.log',
-                    'level' => Level::Debug,
-                ],
-            ],
-            // Logstash 处理器
-            [
-                'class' => LogstashQueueHandler::class,
-                'constructor' => [
-                    'host' => env('LOGSTASH_HOST', '192.168.31.210'),
-                    'port' => env('LOGSTASH_PORT', 5000),
-                    'project' => env('LOGSTASH_PROJECT', 'your-project'),
-                    'module' => 'default',
-                    'team' => env('LOGSTASH_TEAM', 'your-team'),
-                    'level' => Level::Info,
-                ],
-            ],
-        ],
-    ],
-];
+// 记录异常日志
+try {
+    // 业务逻辑
+} catch (\Exception $e) {
+    Log::exception('user', $e, '用户操作失败');
+}
 ```
 
-## 使用方法
-
-### 1. 注解日志（推荐）
-
-使用 `#[LogChannel]` 注解自动注入日志实例：
+### 方式 2: 使用 Trait（推荐用于服务类）
 
 ```php
-<?php
+use Hua5p\HyperfLogstash\Trait\LoggerTrait;
 
-namespace App\Service;
-
-use Hua5p\HyperfLogstash\Annotation\LogChannel;
-use Hua5p\HyperfLogstash\Service\BaseService;
-
-#[LogChannel(module: 'recommendation', type: 'rule')]
-class RecommendationService extends BaseService
+class UserService
 {
-    public function generateRecommendations()
+    use LoggerTrait;
+
+    public function __construct()
     {
-        $this->logger->info('开始生成推荐');
+        $this->setLogModule('user');
+    }
+
+    public function createUser(array $userData)
+    {
+        $this->logBusiness('create_user', $userData);
         
         try {
             // 业务逻辑
-            $this->logger->info('推荐生成完成');
+            $this->logInfo('用户创建成功', ['user_id' => 123]);
         } catch (\Exception $e) {
-            $this->errorLogger->error('推荐生成失败', ['error' => $e->getMessage()]);
+            $this->logException($e, '用户创建失败');
         }
     }
 }
 ```
 
-### 2. 直接使用注解
+### 方式 3: 使用注解（推荐用于关键方法）
 
 ```php
-<?php
+use Hua5p\HyperfLogstash\Annotation\HLogger;
 
-namespace App\Service;
-
-use Hua5p\HyperfLogstash\Annotation\LogChannel;
-
-#[LogChannel(module: 'indicator', type: 'buyer')]
-class BuyerIndicatorService
+class PaymentService
 {
-    public $logger;
-    public $errorLogger;
-
-    public function calculateIndicators()
+    #[HLogger(
+        message: '处理支付请求',
+        logParams: true,
+        logResult: true,
+        logPerformance: true
+    )]
+    public function processPayment(array $paymentData)
     {
-        $this->logger->info('开始计算指标');
-        $this->errorLogger->error('计算失败', ['error' => '数据异常']);
+        // 业务逻辑会自动被注解记录
+        return $this->doProcessPayment($paymentData);
     }
 }
 ```
 
-### 3. 自动生效
+## 配置
 
-安装后，所有日志都会自动写到 Logstash，无需修改任何代码：
+### 环境变量配置
+
+在 `.env` 文件中配置：
+
+```env
+# Logstash 配置
+LOGSTASH_HOST=192.168.31.210
+LOGSTASH_PORT=5000
+LOGSTASH_PROJECT=hua5Rec
+LOGSTASH_TEAM=hua5p
+LOGSTASH_ENABLED=true
+```
+
+### 自定义配置
+
+如果需要自定义配置，可以修改 `config/autoload/logstash.php` 文件：
 
 ```php
 <?php
 
-namespace App\Service;
-
-use Hyperf\Logger\LoggerFactory;
-
-class ExampleService
-{
-    public function __construct(
-        private LoggerFactory $loggerFactory
-    ) {}
-
-    public function doSomething()
-    {
-        // 这些日志会自动写到 Logstash
-        $logger = $this->loggerFactory->get('default');
-        $logger->info('开始执行任务', ['task_id' => 123]);
-        $logger->error('任务执行失败', ['error' => '连接超时']);
-    }
-}
-```
-
-### 2. 框架日志
-
-框架内部的日志也会自动写到 Logstash：
-- SQL 查询日志
-- 路由访问日志
-- 中间件日志
-- 异常日志
-- 定时任务日志
-
-## 日志索引格式
-
-不同日志通道会生成不同的索引：
-
-| 日志通道 | 索引格式 | 示例 |
-|----------|----------|------|
-| default | `{team}-{project}-default` | `your-team-your-project-default` |
-| sql | `{team}-{project}-sql` | `your-team-your-project-sql` |
-| other | `{team}-{project}-other` | `your-team-your-project-other` |
-
-## Logstash 配置示例
-
-```conf
-# /etc/logstash/conf.d/hyperf-tcp.conf
-
-input {
-  tcp {
-    port => 5000
-    codec => json
-  }
-}
-
-filter {
-  # 处理时间戳
-  if [datetime] {
-    date {
-      match => [ "datetime", "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ" ]
-      target => "@timestamp"
-    }
-  }
-
-  # 处理索引信息
-  if [index] {
-    mutate {
-      add_field => { "[@metadata][index]" => "%{[index]}" }
-    }
-  } else {
-    mutate {
-      add_field => { "[@metadata][index]" => "your-team-your-project-default" }
-    }
-  }
-}
-
-output {
-  elasticsearch {
-    hosts => ["localhost:9200"]
-    index => "%{[@metadata][index]}"
+return [
+    // Logstash 连接配置
+    'logstash' => [
+        'host' => env('LOGSTASH_HOST', '192.168.31.210'),
+        'port' => env('LOGSTASH_PORT', 5000),
+        'project' => env('LOGSTASH_PROJECT', 'hua5Rec'),
+        'team' => env('LOGSTASH_TEAM', 'hua5p'),
+        'enabled' => env('LOGSTASH_ENABLED', true),
+    ],
     
-    # 如果 Elasticsearch 需要认证
-    # user => "elastic"
-    # password => "your_password"
-  }
-}
+    // 日志配置
+    'logger' => [
+        'default' => [
+            'handlers' => [
+                // 你的自定义处理器...
+            ],
+        ],
+    ],
+    
+    // 其他配置...
+];
 ```
 
-## 监控和管理
+## 日志模块
 
-### 1. 检查队列状态
+支持按模块分离日志文件：
 
-```bash
-# 检查 Redis 队列中的消息数量
-redis-cli llen queue:logstash
-
-# 检查失败队列
-redis-cli llen queue:logstash:failed
+```
+runtime/logs/
+├── user/
+│   ├── app.log
+│   ├── error.log
+│   └── business.log
+├── order/
+│   ├── app.log
+│   ├── error.log
+│   └── business.log
+└── payment/
+    ├── app.log
+    ├── error.log
+    └── business.log
 ```
 
-### 2. 检查进程状态
+## API 参考
 
-```bash
-# 检查 Logstash 消费进程
-ps aux | grep logstash-queue-consumer
+### 静态门面类
+
+```php
+// 基础日志方法
+Log::debug(string $module, string $message, array $context = [], string $type = 'app')
+Log::info(string $module, string $message, array $context = [], string $type = 'app')
+Log::warning(string $module, string $message, array $context = [], string $type = 'app')
+Log::error(string $module, string $message, array $context = [], string $type = 'error')
+
+// 特殊日志方法
+Log::exception(string $module, \Throwable $exception, string $message = '', array $context = [])
+Log::business(string $module, string $action, array $data = [], array $context = [])
+Log::performance(string $module, string $operation, float $duration, array $context = [])
+
+// 获取日志实例
+Log::channel(string $module, string $type = 'app'): Logger
 ```
 
-### 3. 查看日志
+### Trait 方法
 
-```bash
-# 查看进程日志
-tail -f runtime/logs/hyperf.log | grep logstash
+```php
+// 设置模块
+$this->setLogModule(string $module)
+$this->setLogType(string $type)
+
+// 获取日志实例
+$this->getLogger(): Logger
+$this->getErrorLogger(): Logger
+$this->getDebugLogger(): Logger
+$this->getBusinessLogger(): Logger
+$this->getPerformanceLogger(): Logger
+
+// 记录日志
+$this->logInfo(string $message, array $context = [])
+$this->logDebug(string $message, array $context = [])
+$this->logWarning(string $message, array $context = [])
+$this->logError(string $message, array $context = [])
+$this->logException(\Throwable $exception, string $message = '', array $context = [])
+$this->logBusiness(string $action, array $data = [], array $context = [])
+$this->logPerformance(string $operation, float $duration, array $context = [])
 ```
 
-## 故障排除
+### 注解参数
 
-### 1. 日志没有出现在 Logstash
-
-- 检查 `LOGSTASH_ENABLED` 环境变量
-- 确认 Logstash 服务正在运行
-- 检查网络连接和防火墙设置
-
-### 2. 队列消息堆积
-
-- 确认 `LogstashQueueConsumer` 进程正在运行
-- 检查 Redis 连接
-- 查看进程日志：`tail -f runtime/logs/logstash-consumer.log`
-
-### 3. 连接超时
-
-- 检查 Logstash 服务状态
-- 验证 IP 地址和端口配置
-- 检查网络连通性
-
-### 4. 日志循环问题
-
-- 消费进程使用独立的文件日志器，避免无限循环
-- 进程日志写入 `runtime/logs/logstash-consumer.log`
-- 不会发送到 Logstash 队列
-
-## 开发
-
-### 1. 克隆仓库
-
-```bash
-git clone https://github.com/hua5p/hyperf-logstash.git
-cd hyperf-logstash
-composer install
+```php
+#[HLogger(
+    message: string,           // 日志消息
+    level: string,            // 日志级别 (debug|info|warning|error)
+    context: array,           // 上下文数据
+    logParams: bool,          // 是否记录方法参数
+    logResult: bool,          // 是否记录返回值
+    logException: bool,       // 是否记录异常
+    logPerformance: bool,     // 是否记录性能
+    module: ?string,          // 模块名（可选，自动推断）
+    type: string             // 日志类型
+)]
 ```
 
-### 2. 运行测试
+## 示例
 
-```bash
-composer test
-```
+查看 `examples/` 目录下的完整示例：
 
-### 3. 贡献代码
-
-1. Fork 项目
-2. 创建功能分支
-3. 提交更改
-4. 创建 Pull Request
+- `simple-usage.php` - 简化使用示例
+- `basic-usage.php` - 基础使用示例
+- `annotation-usage.php` - 注解使用示例
 
 ## 许可证
 
-MIT License - 详见 [LICENSE](LICENSE) 文件
-
-## 支持
-
-如有问题或建议，请提交 [Issue](https://github.com/hua5p/hyperf-logstash/issues) 
+MIT License 

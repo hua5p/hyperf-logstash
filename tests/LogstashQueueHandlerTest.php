@@ -44,6 +44,7 @@ class LogstashQueueHandlerTest extends TestCase
             'test-project',
             'test-module',
             'test-team',
+            'test-machine',
             Logger::INFO
         );
 
