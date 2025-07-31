@@ -8,6 +8,8 @@ use Monolog\Formatter\LineFormatter;
 use Hua5p\HyperfLogstash\Logger\LogstashQueueHandler;
 use Hua5p\HyperfLogstash\Logger\UuidRequestIdProcessor;
 
+use function Hyperf\Collection\data_get;
+
 class LogFactoryService
 {
     private static array $loggers = [];
@@ -53,13 +55,13 @@ class LogFactoryService
 
         $fileHandler = new RotatingFileHandler(
             $logPath,
-            $config['max_files'],
+            data_get($config, 'max_files', data_get($config['logstash'], 'max_files', 30)),
             Logger::INFO
         );
 
         $fileHandler->setFormatter(new LineFormatter(
             "[%datetime%] [request_id: %extra.request_id%] %message% %context%\n",
-            $config['date_format'],
+            data_get($config, 'date_format', data_get($config['logstash'], 'date_format', 'Y-m-d H:i:s')),
             true,
             true
         ));
