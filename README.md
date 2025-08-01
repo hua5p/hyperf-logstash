@@ -21,13 +21,7 @@ composer require hua5p/hyperf-logstash
 
 ## 快速配置
 
-### 1. 发布配置文件
-
-```bash
-php bin/hyperf.php vendor:publish hua5p/hyperf-logstash
-```
-
-### 2. 配置环境变量（可选）
+### 1. 配置环境变量（可选）
 
 在 `.env` 文件中配置：
 
@@ -40,9 +34,9 @@ LOGSTASH_TEAM=hua5p
 LOGSTASH_ENABLED=true
 ```
 
-### 3. 开始使用
+### 2. 开始使用
 
-现在你可以直接使用日志功能，无需额外配置！
+现在你可以直接使用日志功能，无需发布配置文件！
 
 ## 快速开始
 
@@ -129,35 +123,15 @@ LOGSTASH_TEAM=hua5p
 LOGSTASH_ENABLED=true
 ```
 
-### 自定义配置
+### 高级配置（可选）
 
-如果需要自定义配置，可以修改 `config/autoload/logstash.php` 文件：
+如果需要更复杂的日志配置，可以发布并修改配置文件：
 
-```php
-<?php
-
-return [
-    // Logstash 连接配置
-    'logstash' => [
-        'host' => env('LOGSTASH_HOST', '192.168.31.210'),
-        'port' => env('LOGSTASH_PORT', 5000),
-        'project' => env('LOGSTASH_PROJECT', 'hua5Rec'),
-        'team' => env('LOGSTASH_TEAM', 'hua5p'),
-        'enabled' => env('LOGSTASH_ENABLED', true),
-    ],
-    
-    // 日志配置
-    'logger' => [
-        'default' => [
-            'handlers' => [
-                // 你的自定义处理器...
-            ],
-        ],
-    ],
-    
-    // 其他配置...
-];
+```bash
+php bin/hyperf.php vendor:publish hua5p/hyperf-logstash
 ```
+
+然后修改生成的配置文件来自定义日志行为。
 
 ## 日志模块
 

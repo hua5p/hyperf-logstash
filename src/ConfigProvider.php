@@ -13,21 +13,44 @@ class ConfigProvider
 {
     public function __invoke(): array
     {
-        $config = require __DIR__ . '/../config/autoload/hua5plog.php';
-
         return [
             // 自动注册配置
-            'dependencies' => $config['dependencies'] ?? [],
-            'aspects' => $config['aspects'] ?? [],
-            'processes' => $config['processes'] ?? [],
-            'annotations' => $config['annotations'] ?? [],
-            // 发布配置文件
+            'dependencies' => [
+                LogFactoryService::class => LogFactoryService::class,
+            ],
+            'aspects' => [
+                LogChannelAspect::class,
+                HLoggerAspect::class,
+            ],
+            'processes' => [
+                LogstashQueueConsumer::class,
+            ],
+            'annotations' => [
+                'scan' => [
+                    'paths' => [
+                        __DIR__,
+                    ],
+                ],
+            ],
+            // 发布配置文件（可选）
             'publish' => [
                 [
-                    'id' => 'hua5plog',
-                    'description' => 'The logstash config for hyperf-logstash.',
-                    'source' => __DIR__ . '/../config/autoload/hua5plog.php',
-                    'destination' => 'config/autoload/hua5plog.php',
+                    'id' => 'logger',
+                    'description' => 'The logger config for hyperf-logstash.',
+                    'source' => __DIR__ . '/../config/autoload/logger.php',
+                    'destination' => 'config/autoload/logger.php',
+                ],
+                [
+                    'id' => 'processes',
+                    'description' => 'The processes config for hyperf-logstash.',
+                    'source' => __DIR__ . '/../config/autoload/processes.php',
+                    'destination' => 'config/autoload/processes.php',
+                ],
+                [
+                    'id' => 'aspects',
+                    'description' => 'The aspects config for hyperf-logstash.',
+                    'source' => __DIR__ . '/../config/autoload/aspects.php',
+                    'destination' => 'config/autoload/aspects.php',
                 ],
             ],
         ];

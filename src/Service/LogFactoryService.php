@@ -141,7 +141,7 @@ class LogFactoryService
     {
         // 默认配置
         $defaultConfig = [
-            'max_files' => 30,
+            'max_files' => 7,
             'date_format' => 'Y-m-d H:i:s',
             'logstash' => [
                 'enabled' => env('LOGSTASH_ENABLED', false),
