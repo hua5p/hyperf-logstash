@@ -7,8 +7,8 @@ use Monolog\Handler\RotatingFileHandler;
 use Monolog\Formatter\LineFormatter;
 use Hua5p\HyperfLogstash\Logger\LogstashQueueHandler;
 use Hua5p\HyperfLogstash\Logger\UuidRequestIdProcessor;
-
 use function Hyperf\Collection\data_get;
+use function Hyperf\Support\env;
 
 class LogFactoryService
 {
@@ -45,7 +45,7 @@ class LogFactoryService
         $config = self::getConfig();
 
         // 添加文件日志处理器
-        $logPath = BASE_PATH . "/runtime/logs/{$module}/{$type}.log";
+        $logPath = (defined('BASE_PATH') ? constant('BASE_PATH') : getcwd()) . "/runtime/logs/{$module}/{$type}.log";
 
         // 确保目录存在
         $dir = dirname($logPath);
@@ -98,7 +98,7 @@ class LogFactoryService
         $config = self::getConfig();
 
         // 添加文件日志处理器
-        $logPath = BASE_PATH . "/runtime/logs/hyperf.log";
+        $logPath = (defined('BASE_PATH') ? constant('BASE_PATH') : getcwd()) . "/runtime/logs/hyperf.log";
 
         $fileHandler = new RotatingFileHandler(
             $logPath,
@@ -139,20 +139,22 @@ class LogFactoryService
      */
     private static function getConfig(): array
     {
-        try {
-            $config = config('hua5plog', [
-                'max_files' => 30,
-                'date_format' => 'Y-m-d H:i:s',
-            ]);
-            return $config;
-        } catch (\Throwable $e) {
-            // 配置系统不可用时使用默认配置
-        }
-
         // 默认配置
-        return [
+        $defaultConfig = [
             'max_files' => 30,
             'date_format' => 'Y-m-d H:i:s',
+            'logstash' => [
+                'enabled' => env('LOGSTASH_ENABLED', false),
+                'host' => env('LOGSTASH_HOST', '192.168.31.210'),
+                'port' => env('LOGSTASH_PORT', 5000),
+                'project' => env('LOGSTASH_PROJECT', 'hua5rec'),
+                'team' => env('LOGSTASH_TEAM', 'hua5p'),
+            ],
         ];
+
+        // 在 Hyperf 包中，我们直接使用默认配置
+        // 用户可以通过环境变量来覆盖配置
+
+        return $defaultConfig;
     }
 }
