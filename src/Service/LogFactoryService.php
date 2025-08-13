@@ -114,26 +114,28 @@ class LogFactoryService
         // 获取统一配置
         $config = self::getConfig();
 
-        // 添加文件日志处理器
-        $logPath = (defined('BASE_PATH') ? constant('BASE_PATH') : getcwd()) . "/runtime/logs/{$module}/{$type}.log";
+        // 添加文件日志处理器（如果未禁用本地文件日志）
+        if (!($config['disable_local_logs'] ?? false)) {
+            $logPath = (defined('BASE_PATH') ? constant('BASE_PATH') : getcwd()) . "/runtime/logs/{$module}/{$type}.log";
 
-        // 安全地创建目录
-        self::ensureDirectoryExists(dirname($logPath));
+            // 安全地创建目录
+            self::ensureDirectoryExists(dirname($logPath));
 
-        $fileHandler = new RotatingFileHandler(
-            $logPath,
-            data_get($config, 'max_files', data_get($config['logstash'], 'max_files', 30)),
-            Logger::INFO
-        );
+            $fileHandler = new RotatingFileHandler(
+                $logPath,
+                data_get($config, 'max_files', data_get($config['logstash'], 'max_files', 30)),
+                Logger::INFO
+            );
 
-        $fileHandler->setFormatter(new LineFormatter(
-            "[%datetime%] [request_id: %extra.request_id%] %message% %context%\n",
-            data_get($config, 'date_format', data_get($config['logstash'], 'date_format', 'Y-m-d H:i:s')),
-            true,
-            true
-        ));
+            $fileHandler->setFormatter(new LineFormatter(
+                "[%datetime%] [request_id: %extra.request_id%] %message% %context%\n",
+                data_get($config, 'date_format', data_get($config['logstash'], 'date_format', 'Y-m-d H:i:s')),
+                true,
+                true
+            ));
 
-        $logger->pushHandler($fileHandler);
+            $logger->pushHandler($fileHandler);
+        }
 
         // 添加 Logstash 队列处理器（如果配置启用）
         if ($config['logstash']['enabled'] ?? false) {
@@ -202,26 +204,28 @@ class LogFactoryService
         // 获取统一配置
         $config = self::getConfig();
 
-        // 添加文件日志处理器
-        $logPath = (defined('BASE_PATH') ? constant('BASE_PATH') : getcwd()) . "/runtime/logs/hyperf.log";
+        // 添加文件日志处理器（如果未禁用本地文件日志）
+        if (!($config['disable_local_logs'] ?? false)) {
+            $logPath = (defined('BASE_PATH') ? constant('BASE_PATH') : getcwd()) . "/runtime/logs/hyperf.log";
 
-        // 安全地创建目录
-        self::ensureDirectoryExists(dirname($logPath));
+            // 安全地创建目录
+            self::ensureDirectoryExists(dirname($logPath));
 
-        $fileHandler = new RotatingFileHandler(
-            $logPath,
-            $config['max_files'],
-            Logger::INFO
-        );
+            $fileHandler = new RotatingFileHandler(
+                $logPath,
+                $config['max_files'],
+                Logger::INFO
+            );
 
-        $fileHandler->setFormatter(new LineFormatter(
-            "[%datetime%] [request_id: %extra.request_id%] %message% %context%\n",
-            $config['date_format'],
-            true,
-            true
-        ));
+            $fileHandler->setFormatter(new LineFormatter(
+                "[%datetime%] [request_id: %extra.request_id%] %message% %context%\n",
+                $config['date_format'],
+                true,
+                true
+            ));
 
-        $logger->pushHandler($fileHandler);
+            $logger->pushHandler($fileHandler);
+        }
 
         // 添加 Logstash 队列处理器（如果配置启用）
         if ($config['logstash']['enabled'] ?? false) {
@@ -251,6 +255,8 @@ class LogFactoryService
         $defaultConfig = [
             'max_files' => 7,
             'date_format' => 'Y-m-d H:i:s',
+            // 是否禁用本地文件日志，只写 Logstash
+            'disable_local_logs' => env('LOGSTASH_DISABLE_LOCAL_LOGS', false),
             'logstash' => [
                 'enabled' => env('LOGSTASH_ENABLED', false),
                 'host' => env('LOGSTASH_HOST', '192.168.31.210'),

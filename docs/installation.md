@@ -23,6 +23,10 @@ LOGSTASH_PORT=5000
 # 项目配置
 LOGSTASH_PROJECT=your-project
 LOGSTASH_TEAM=your-team
+
+# 日志模式配置（可选）
+# 设置为 true 时只写 Logstash，不写本地文件
+LOGSTASH_DISABLE_LOCAL_LOGS=false
 ```
 
 ### 3. 启动应用
@@ -105,6 +109,29 @@ telnet 192.168.31.210 5000
 php bin/hyperf.php config:clear
 ```
 
+## 日志模式配置
+
+### 默认模式（推荐）
+同时写入本地文件和 Logstash：
+```env
+LOGSTASH_ENABLED=true
+LOGSTASH_DISABLE_LOCAL_LOGS=false
+```
+
+### Logstash 专用模式
+只写入 Logstash，不写本地文件（节省磁盘空间）：
+```env
+LOGSTASH_ENABLED=true
+LOGSTASH_DISABLE_LOCAL_LOGS=true
+```
+
+### 本地文件模式
+只写入本地文件，不写 Logstash：
+```env
+LOGSTASH_ENABLED=false
+LOGSTASH_DISABLE_LOCAL_LOGS=false
+```
+
 ## 下一步
 
 安装完成后，您可以：
@@ -112,4 +139,5 @@ php bin/hyperf.php config:clear
 1. **使用注解日志**：参考 [注解使用示例](annotation-usage.php)
 2. **查看日志**：检查 `runtime/logs/` 目录
 3. **监控队列**：使用 Redis 命令查看队列状态
+4. **测试日志模式**：运行 `php examples/logstash-only-test.php`
 4. **配置 Logstash**：参考 [Logstash 配置示例](../README.md#logstash-配置示例) 

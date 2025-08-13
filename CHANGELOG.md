@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.8] - 2025-01-29
+
+### Added
+- **Logstash 专用模式**: 支持只写 Logstash 不写本地文件的功能
+- **环境变量配置**: 新增 `LOGSTASH_DISABLE_LOCAL_LOGS` 环境变量
+- **日志模式测试**: 添加完整的日志模式测试用例
+- **日志模式文档**: 提供详细的日志模式配置说明
+
+### Changed
+- **配置结构**: 在配置中添加 `disable_local_logs` 选项
+- **安装文档**: 更新安装文档，说明日志模式配置
+- **性能优化**: Logstash 专用模式可减少磁盘 I/O，提升性能
+
 ## [0.0.7] - 2025-01-29
 
 ### Fixed

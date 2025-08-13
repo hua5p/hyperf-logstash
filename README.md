@@ -12,6 +12,8 @@ Hyperf Logstash 集成包，提供开箱即用的日志解决方案，支持模�
 - 🛡️ **异常处理**：自动记录异常信息
 - 🔧 **灵活配置**：支持环境变量配置
 - 🚀 **单例模式**：日志实例缓存，避免重复创建
+- 🌐 **多种日志模式**：支持默认模式、Logstash 专用模式、本地文件模式
+- 🔄 **协程安全**：完全支持协程环境，无并发问题
 
 ## 安装
 
@@ -32,6 +34,10 @@ LOGSTASH_PORT=5000
 LOGSTASH_PROJECT=hua5Rec
 LOGSTASH_TEAM=hua5p
 LOGSTASH_ENABLED=true
+
+# 日志模式配置（可选）
+# 设置为 true 时只写 Logstash，不写本地文件
+LOGSTASH_DISABLE_LOCAL_LOGS=false
 ```
 
 ### 2. 开始使用
@@ -213,6 +219,33 @@ $this->logPerformance(string $operation, float $duration, array $context = [])
 )]
 ```
 
+## 日志模式
+
+支持多种日志模式，适应不同的部署环境：
+
+### 默认模式（推荐）
+同时写入本地文件和 Logstash：
+```env
+LOGSTASH_ENABLED=true
+LOGSTASH_DISABLE_LOCAL_LOGS=false
+```
+
+### Logstash 专用模式
+只写入 Logstash，不写本地文件（节省磁盘空间）：
+```env
+LOGSTASH_ENABLED=true
+LOGSTASH_DISABLE_LOCAL_LOGS=true
+```
+
+### 本地文件模式
+只写入本地文件，不写 Logstash：
+```env
+LOGSTASH_ENABLED=false
+LOGSTASH_DISABLE_LOCAL_LOGS=false
+```
+
+详细配置说明请参考 [日志模式配置文档](docs/logging-modes.md)。
+
 ## 示例
 
 查看 `examples/` 目录下的完整示例：
@@ -220,6 +253,8 @@ $this->logPerformance(string $operation, float $duration, array $context = [])
 - `simple-usage.php` - 简化使用示例
 - `basic-usage.php` - 基础使用示例
 - `annotation-usage.php` - 注解使用示例
+- `coroutine-test.php` - 协程并发测试
+- `logstash-only-test.php` - 日志模式测试
 
 ## 许可证
 
