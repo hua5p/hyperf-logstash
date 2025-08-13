@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.7] - 2025-01-29
+
+### Fixed
+- **协程并发问题**: 修复协程环境下 `#[LogChannel]` 注解的 "mkdir(): File exists" 错误
+- **日志实例竞态条件**: 使用协程安全的单例模式，防止重复创建日志实例
+- **目录创建冲突**: 添加重试机制处理并发目录创建
+
+### Added
+- **协程测试**: 添加协程并发测试用例验证修复效果
+- **协程安全文档**: 提供详细的协程问题修复说明
+
 ## [0.0.6] - 2025-01-29
 
 ### Changed

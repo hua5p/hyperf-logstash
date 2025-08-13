@@ -9,20 +9,55 @@ use Hua5p\HyperfLogstash\Logger\LogstashQueueHandler;
 use Hua5p\HyperfLogstash\Logger\UuidRequestIdProcessor;
 use function Hyperf\Collection\data_get;
 use function Hyperf\Support\env;
+use Hyperf\Coroutine\Coroutine;
 
 class LogFactoryService
 {
     private static array $loggers = [];
+    private static array $creating = [];
 
     public static function createLogger(string $module, string $type): Logger
     {
         $key = "{$module}-{$type}";
 
-        if (!isset(self::$loggers[$key])) {
-            self::$loggers[$key] = self::buildLogger($module, $type);
+        // 如果已经创建过，直接返回
+        if (isset(self::$loggers[$key])) {
+            return self::$loggers[$key];
         }
 
-        return self::$loggers[$key];
+        // 如果正在创建中，等待创建完成
+        if (isset(self::$creating[$key])) {
+            // 等待其他协程创建完成
+            $maxWait = 10; // 最多等待10次
+            $waitCount = 0;
+
+            while (isset(self::$creating[$key]) && $waitCount < $maxWait) {
+                Coroutine::sleep(0.001);
+                $waitCount++;
+
+                // 再次检查是否已经创建完成
+                if (isset(self::$loggers[$key])) {
+                    return self::$loggers[$key];
+                }
+            }
+        }
+
+        // 标记正在创建
+        self::$creating[$key] = true;
+
+        try {
+            // 再次检查是否已被其他协程创建
+            if (isset(self::$loggers[$key])) {
+                return self::$loggers[$key];
+            }
+
+            // 创建新的logger
+            self::$loggers[$key] = self::buildLogger($module, $type);
+            return self::$loggers[$key];
+        } finally {
+            // 移除创建标记
+            unset(self::$creating[$key]);
+        }
     }
 
     /**
@@ -30,11 +65,46 @@ class LogFactoryService
      */
     public static function createDefaultLogger(): Logger
     {
-        if (!isset(self::$loggers['default'])) {
-            self::$loggers['default'] = self::buildDefaultLogger();
+        $key = 'default';
+
+        // 如果已经创建过，直接返回
+        if (isset(self::$loggers[$key])) {
+            return self::$loggers[$key];
         }
 
-        return self::$loggers['default'];
+        // 如果正在创建中，等待创建完成
+        if (isset(self::$creating[$key])) {
+            // 等待其他协程创建完成
+            $maxWait = 10; // 最多等待10次
+            $waitCount = 0;
+
+            while (isset(self::$creating[$key]) && $waitCount < $maxWait) {
+                Coroutine::sleep(0.001);
+                $waitCount++;
+
+                // 再次检查是否已经创建完成
+                if (isset(self::$loggers[$key])) {
+                    return self::$loggers[$key];
+                }
+            }
+        }
+
+        // 标记正在创建
+        self::$creating[$key] = true;
+
+        try {
+            // 再次检查是否已被其他协程创建
+            if (isset(self::$loggers[$key])) {
+                return self::$loggers[$key];
+            }
+
+            // 创建新的logger
+            self::$loggers[$key] = self::buildDefaultLogger();
+            return self::$loggers[$key];
+        } finally {
+            // 移除创建标记
+            unset(self::$creating[$key]);
+        }
     }
 
     private static function buildLogger(string $module, string $type): Logger
@@ -47,11 +117,8 @@ class LogFactoryService
         // 添加文件日志处理器
         $logPath = (defined('BASE_PATH') ? constant('BASE_PATH') : getcwd()) . "/runtime/logs/{$module}/{$type}.log";
 
-        // 确保目录存在
-        $dir = dirname($logPath);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
+        // 安全地创建目录
+        self::ensureDirectoryExists(dirname($logPath));
 
         $fileHandler = new RotatingFileHandler(
             $logPath,
@@ -88,6 +155,44 @@ class LogFactoryService
     }
 
     /**
+     * 安全地创建目录，处理并发情况
+     */
+    private static function ensureDirectoryExists(string $dir): void
+    {
+        if (is_dir($dir)) {
+            return;
+        }
+
+        // 使用重试机制来处理并发创建目录的情况
+        $maxRetries = 3;
+        $retryCount = 0;
+
+        while ($retryCount < $maxRetries) {
+            try {
+                if (!is_dir($dir)) {
+                    mkdir($dir, 0755, true);
+                }
+                return;
+            } catch (\Exception $e) {
+                $retryCount++;
+
+                // 如果目录已经存在，说明其他协程已经创建成功
+                if (is_dir($dir)) {
+                    return;
+                }
+
+                // 最后一次重试失败，抛出异常
+                if ($retryCount >= $maxRetries) {
+                    throw $e;
+                }
+
+                // 短暂等待后重试
+                \Hyperf\Coroutine\Coroutine::sleep(0.001 * $retryCount);
+            }
+        }
+    }
+
+    /**
      * 构建默认日志实例
      */
     private static function buildDefaultLogger(): Logger
@@ -99,6 +204,9 @@ class LogFactoryService
 
         // 添加文件日志处理器
         $logPath = (defined('BASE_PATH') ? constant('BASE_PATH') : getcwd()) . "/runtime/logs/hyperf.log";
+
+        // 安全地创建目录
+        self::ensureDirectoryExists(dirname($logPath));
 
         $fileHandler = new RotatingFileHandler(
             $logPath,
