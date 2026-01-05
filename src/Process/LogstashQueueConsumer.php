@@ -10,7 +10,7 @@ use Hyperf\Redis\RedisFactory;
 use Hyperf\Logger\LoggerFactory;
 use Psr\Container\ContainerInterface;
 use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
+use Monolog\Handler\RotatingFileHandler;
 use Monolog\Formatter\LineFormatter;
 use function Hyperf\Support\env;
 
@@ -72,14 +72,27 @@ class LogstashQueueConsumer extends AbstractProcess
 
     /**
      * 创建进程内部专用的 logger，只写入文件，不发送到队列
+     * 使用 RotatingFileHandler 自动轮转日志文件，避免文件过大
      */
     private function createProcessLogger(): Logger
     {
         $logger = new Logger('logstash-queue-consumer');
 
-        // 只使用文件处理器，避免队列循环
-        $handler = new StreamHandler(
-            'runtime/logs/logstash-consumer.log',
+        // 获取日志配置
+        $maxFiles = (int) env('LOGSTASH_CONSUMER_LOG_MAX_FILES', 7);
+        $logPath = (defined('BASE_PATH') ? constant('BASE_PATH') : getcwd()) . '/runtime/logs/logstash-consumer.log';
+
+        // 确保目录存在
+        $dir = dirname($logPath);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        // 使用 RotatingFileHandler 自动轮转日志文件
+        // 按日期轮转，最多保留 maxFiles 个文件，自动删除旧文件
+        $handler = new RotatingFileHandler(
+            $logPath,
+            $maxFiles, // 最多保留 7 个文件（约一周的日志）
             \Monolog\Level::Info
         );
 
@@ -195,7 +208,7 @@ class LogstashQueueConsumer extends AbstractProcess
                 'port' => $jobData['port'],
                 'exception' => $e->getMessage()
             ]);
-            $this->handleFailedMessage($jobData, $e);
+            // $this->handleFailedMessage($jobData, $e);
         }
     }
 

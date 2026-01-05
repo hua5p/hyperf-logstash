@@ -38,6 +38,10 @@ LOGSTASH_ENABLED=true
 # 日志模式配置（可选）
 # 设置为 true 时只写 Logstash，不写本地文件
 LOGSTASH_DISABLE_LOCAL_LOGS=false
+
+# 进程日志配置（可选）
+# 消费进程的日志文件最多保留的天数（按日期轮转）
+LOGSTASH_CONSUMER_LOG_MAX_FILES=7
 ```
 
 ### 2. 开始使用
