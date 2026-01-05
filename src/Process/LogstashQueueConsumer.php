@@ -79,7 +79,7 @@ class LogstashQueueConsumer extends AbstractProcess
         $logger = new Logger('logstash-queue-consumer');
 
         // 获取日志配置
-        $maxFiles = (int) env('LOGSTASH_CONSUMER_LOG_MAX_FILES', 7);
+        $maxFiles = (int) env('LOGSTASH_CONSUMER_LOG_MAX_FILES', 2);
         $logPath = (defined('BASE_PATH') ? constant('BASE_PATH') : getcwd()) . '/runtime/logs/logstash-consumer.log';
 
         // 确保目录存在
