@@ -123,7 +123,7 @@ class LogFactoryService
 
             $fileHandler = new RotatingFileHandler(
                 $logPath,
-                data_get($config, 'max_files', data_get($config['logstash'], 'max_files', 30)),
+                (int)data_get($config, 'max_files', data_get($config['logstash'], 'max_files', 3)),
                 Logger::INFO
             );
 
@@ -213,7 +213,7 @@ class LogFactoryService
 
             $fileHandler = new RotatingFileHandler(
                 $logPath,
-                $config['max_files'],
+                (int)$config['max_files'],
                 Logger::INFO
             );
 
@@ -253,7 +253,7 @@ class LogFactoryService
     {
         // 默认配置
         $defaultConfig = [
-            'max_files' => 7,
+            'max_files' => env('LOGSTASH_MAX_FILES', 2),
             'date_format' => 'Y-m-d H:i:s',
             // 是否禁用本地文件日志，只写 Logstash
             'disable_local_logs' => env('LOGSTASH_DISABLE_LOCAL_LOGS', false),
